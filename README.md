@@ -13,8 +13,11 @@
 
    TL;DR
 
+   - **Example of channel nil-ing**
    - Read from source and Round-Robin (or anything else) traffic on K out channels.
    - Close `outs` when source is closed
+
+3. [Tee](./tee/). Fan-out but we're not Round Robbinning the traffic, we repicate it into K streams
 
 ## Structures
 
