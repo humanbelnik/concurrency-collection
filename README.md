@@ -19,6 +19,8 @@
 
 3. [Tee](./tee/). Fan-out but we're not Round Robbinning the traffic, we repicate it into K streams
 
+4. [Pipeline](./pipeline/).
+
 ## Structures
 
 1. [Pool with gracefull shutdown](./pool/)
