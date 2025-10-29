@@ -1,19 +1,25 @@
 package main
 
-func fanout(source <-chan int, nsplits int) []chan<- int {
-	outs := make([]chan<- int, nsplits)
-	for i := range nsplits {
-		outs[i] = make(chan<- int)
+import "fmt"
+
+func fanout(source <-chan int, predicate func(int) bool) [2]chan int {
+	outs := [2]chan int{
+		make(chan int),
+		make(chan int),
 	}
 
 	go func() {
-		i := 0
-		for v := range source {
-			outs[i%nsplits] <- v
-			i++
-		}
-		for _, out := range outs {
-			close(out)
+		defer func() {
+			for _, out := range outs {
+				close(out)
+			}
+		}()
+		for x := range source {
+			if predicate(x) {
+				outs[0] <- x
+			} else {
+				outs[1] <- x
+			}
 		}
 	}()
 
@@ -21,5 +27,39 @@ func fanout(source <-chan int, nsplits int) []chan<- int {
 }
 
 func main() {
+	ch := make(chan int)
+	go func() {
+		defer close(ch)
+		for i := range 100 {
+			ch <- i
+		}
+	}()
 
+	chans := fanout(ch, func(v int) bool {
+		if v%2 == 0 {
+			return true
+		}
+		return false
+	})
+
+	i := 0
+	for chans[0] != nil || chans[1] != nil {
+		select {
+		case x, ok := <-chans[0]:
+			if !ok {
+				chans[0] = nil
+				continue
+			}
+			i++
+			fmt.Println("from 0:", x)
+		case x, ok := <-chans[1]:
+			if !ok {
+				chans[1] = nil
+				continue
+			}
+			i++
+			fmt.Println("from 1:", x)
+		}
+	}
+	fmt.Println("i", i)
 }

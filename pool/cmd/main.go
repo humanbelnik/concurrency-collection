@@ -20,7 +20,7 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
 		sched.Go(ctx, func(ctx context.Context) <-chan *model.Job {
-			source := make(chan *model.Job, 500)
+			source := make(chan *model.Job, 100)
 			id := 0
 			go func() {
 				defer func() {

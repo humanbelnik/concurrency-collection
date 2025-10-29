@@ -1,65 +1,30 @@
 package main
 
-import (
-	"context"
-	"fmt"
-	"time"
-)
+import "fmt"
 
-func transform(source <-chan int, f func(int) int) <-chan int {
+func exec(source chan int, apply func(int) int) chan int {
 	out := make(chan int)
+
 	go func() {
 		defer close(out)
-		for v := range source {
-			out <- f(v)
+		for x := range source {
+			out <- apply(x)
 		}
 	}()
 
-	return out
-}
-
-func filter(source <-chan int, pred func(int) bool) <-chan int {
-	out := make(chan int)
-	go func() {
-		defer close(out)
-		for v := range source {
-			if pred(v) {
-				out <- v
-			}
-		}
-	}()
-
-	return out
-}
-
-func generate(ctx context.Context) <-chan int {
-	out := make(chan int)
-	go func() {
-		defer close(out)
-		i := 0
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				out <- i
-				i++
-			}
-		}
-	}()
 	return out
 }
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	source := make(chan int)
+	go func() {
+		defer close(source)
+		for i := range 10 {
+			source <- i
+		}
+	}()
 
-	for v := range filter(transform(generate(ctx),
-		func(v int) int {
-			return -v
-		}), func(v int) bool {
-		return v%5 == 0
-	}) {
-		fmt.Println(v)
+	for x := range exec(source, func(x int) int { return x * x }) {
+		fmt.Println(x)
 	}
 }

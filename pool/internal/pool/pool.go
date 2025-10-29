@@ -62,6 +62,7 @@ func (p *Pool) Go() {
 			}
 		}
 	}()
+
 }
 
 func (p *Pool) execute(exe Executor, j *model.Job) {

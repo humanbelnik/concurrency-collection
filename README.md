@@ -1,31 +1,93 @@
-# concurrency-collection
+# Synchronization primitives
 
-## Patterns
+- [Mutex 1 (Atomics)](./mutex-on-atomic)
+- [Mutex 2 (Channels)](./mutex-on-channel)
 
-1. [Fan-in](./fan-in/). Merge multiple channels into a single one
+---
 
-   TL;DR
+## Base
 
-   - Read from each source in a separate goroutine.
-   - Close `out` channel when all sources will be closed
+### Slice & array
 
-2. [Fan-out](./fan-out/). Split channel into K channels
+## Concurrency patterns
 
-   TL;DR
+### Fan-in pattern
 
-   - **Example of channel nil-ing**
-   - Read from source and Round-Robin (or anything else) traffic on K out channels.
-   - Close `outs` when source is closed
+Написать функцию, которая сливает данные из нескольких каналов в один
 
-3. [Tee](./tee/). Fan-out but we're not Round Robbinning the traffic, we repicate it into K streams
+```go
+func fanin(sources ...<-chan int) <-chan int {
+    // CODE
+}
+```
 
-4. [Pipeline](./pipeline/).
+[Solution](./fan-in/)
 
-## Structures
+### Fan-out pattern
 
-1. [Pool with gracefull shutdown](./pool/)
+Написать функцию, распределяет входные данные по нескольким каналам в соответствии с предикатом
 
-   - block/non-blocking select
-   - waitgroups
-   - range over channel
-   - cancellation via context and done channel
+```go
+func fanout(source <-chan int, predicate func(int) bool) [2]<-chan int {
+    // CODE
+}
+```
+
+[Solution](./fan-out/)
+
+### Done channel
+
+Реализовать механизм, при котором `caller` завершает асинхронный `worker` и продолжает выполнение только после его полного завершения
+
+[Solution](./done-ch)
+
+### Pipeline pattern
+
+Реализовать функцию, которая читает значения из канала, применяет к ним некоторый `func apply()` и шлет в другой канал
+
+[Solution](./pipeline)
+
+### Worker pool
+
+Модернизировать предыдущий пример, добавив пул размера `N`.
+
+[Solution](./workerpool)
+
+### Semaphore
+
+Реализовать `WaitGroup` на семафоре
+
+### Slow function
+
+Пусть некоторый внешний сервис имеет API:
+
+```go
+func slow() (int, error) {
+    // Something slow
+}
+```
+
+Наш сервис готов ждать результат `N` секунд или вернуть ошибку по таймауту.
+Написать обертку для данной функции, реализующую данный функционал
+
+```go
+func wrapWithTimeout(/* TODO */) /* TODO */ {
+    /* TODO */
+}
+```
+
+Изменить реализацию обертки с учетом того, что если функция API вернула ошибку, но у нас еще есть время подождать, то мы можем сделать повторный запрос (Функция API идемпотента)
+
+```go
+func wrapWithTimeoutAndRetry(/* TODO */) /* TODO */ {
+    /* TODO */
+}
+```
+
+## Interview Qs
+
+### Fetch URls
+
+#### Base
+
+Написать функцию, которая опрашивает `url`-ы из списка и опрашивает

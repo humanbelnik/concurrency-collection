@@ -5,26 +5,28 @@ import (
 	"sync"
 )
 
-/*
-Read from each source in a separate goroutine.
-
-When closing out channel?
-- When all sources will be closed
-*/
 func fanin(sources ...<-chan int) <-chan int {
 	out := make(chan int)
+
 	wg := sync.WaitGroup{}
 	wg.Add(len(sources))
 
+	/*
+		Read from each source until it's closed.
+	*/
 	for _, source := range sources {
 		go func() {
 			defer wg.Done()
-			for v := range source {
-				out <- v
+			for x := range source {
+				out <- x
 			}
 		}()
 	}
 
+	/*
+		Not a single writer must be able to close 'out' channel.
+		'out' must be closed when ALL sources are closed.
+	*/
 	go func() {
 		wg.Wait()
 		close(out)
@@ -34,23 +36,28 @@ func fanin(sources ...<-chan int) <-chan int {
 }
 
 func main() {
-	ch1, ch2, ch3 := make(chan int, 10), make(chan int, 10), make(chan int, 10)
+	ch1 := make(chan int)
+	ch2 := make(chan int)
+	ch3 := make(chan int)
+
 	go func() {
 		defer func() {
 			close(ch1)
 			close(ch2)
 			close(ch3)
 		}()
-		for i := range 10 {
+		for i := range 100 {
 			ch1 <- i
 			ch2 <- i
 			ch3 <- i
 		}
 	}()
 
-	counter := 0
+	i := 0
 	for range fanin(ch1, ch2, ch3) {
-		counter++
+		i++
 	}
-	fmt.Println(counter)
+
+	fmt.Println(i)
+
 }
